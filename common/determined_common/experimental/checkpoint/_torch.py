@@ -22,7 +22,13 @@ def load_model(ckpt_dir: pathlib.Path, **kwargs: Any) -> torch.nn.Module:
     if not maybe_model.exists():
         raise AssertionError("checkpoint at {} doesn't include a model.pth file".format(ckpt_dir))
 
-    code_subdirs = [str(x) for x in code_path.iterdir() if x.is_dir()]
+    code_subdirs = [str(x) for x in code_path.glob("**/*") if x.is_dir()]
+
+    current_path = sys.path.copy()
     sys.path = [str(code_path)] + code_subdirs + sys.path
 
-    return torch.load(maybe_model, pickle_module=cloudpickle.pickle, **kwargs)  # type: ignore
+    model = torch.load(maybe_model, pickle_module=cloudpickle.pickle, **kwargs)  # type: ignore
+
+    sys.path = current_path
+
+    return model
