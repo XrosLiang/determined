@@ -1,14 +1,13 @@
 import pathlib
-import sys
-from typing import Any
+from typing import Any, Dict, cast
 
-import cloudpickle
 import torch
 
+from determined.experimental._native import _local_trial_from_context
+from determined.pytorch import PyTorchTrial
 
-def load_model(ckpt_dir: pathlib.Path, **kwargs: Any) -> torch.nn.Module:
-    code_path = ckpt_dir.joinpath("code")
 
+def load_model(ckpt_dir: pathlib.Path, metadata: Dict[str, Any], **kwargs: Any) -> torch.nn.Module:
     # We used MLflow's MLmodel checkpoint format in the past. This format
     # nested the checkpoint in data/. Currently, we have the checkpoint at the
     # top level of the checkpoint directory.
@@ -22,13 +21,16 @@ def load_model(ckpt_dir: pathlib.Path, **kwargs: Any) -> torch.nn.Module:
     if not maybe_model.exists():
         raise AssertionError("checkpoint at {} doesn't include a model.pth file".format(ckpt_dir))
 
-    code_subdirs = [str(x) for x in code_path.glob("**/*") if x.is_dir()]
+    print("CODE DIR:", str(ckpt_dir.joinpath("code")))
+    trial = _local_trial_from_context(
+        ckpt_dir.joinpath("code"),
+        config=metadata["experiment_config"],
+        hparams=metadata["hparams"],
+    )
 
-    current_path = sys.path.copy()
-    sys.path = [str(code_path)] + code_subdirs + sys.path
-
-    model = torch.load(maybe_model, pickle_module=cloudpickle.pickle, **kwargs)  # type: ignore
-
-    sys.path = current_path
+    trial = cast(PyTorchTrial, trial)
+    model = trial.build_model()
+    checkpoint = torch.load(ckpt_dir.joinpath("state_dict.pth"), map_location="cpu")
+    model.load_state_dict(checkpoint["model_state_dict"])
 
     return model

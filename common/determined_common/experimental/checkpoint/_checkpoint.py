@@ -180,7 +180,7 @@ class Checkpoint(object):
             import determined_common.experimental.checkpoint._torch
 
             return determined_common.experimental.checkpoint._torch.load_model(
-                checkpoint_dir, **kwargs
+                checkpoint_dir, metadata, **kwargs
             )
 
         elif checkpoint_type == ModelFramework.TENSORFLOW:

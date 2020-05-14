@@ -126,12 +126,17 @@ def test_pytorch_cifar10_const() -> None:
         config, conf.official_examples_path("cifar10_cnn_pytorch"), 1
     )
     trials = exp.experiment_trials(experiment_id)
-    nn = (
-        Determined(conf.make_master_url())
-        .get_trial(trials[0]["id"])
-        .select_checkpoint(latest=True)
-        .load(map_location=torch.device("cpu"))
+
+    print("TRIALS")
+    __import__("pprint").pprint(trials)
+    print("\n\n")
+
+    checkpoint = (
+        Determined(conf.make_master_url()).get_trial(trials[0]["id"]).select_checkpoint(latest=True)
     )
+
+    print(checkpoint)
+    nn = checkpoint.load()
     assert isinstance(nn, torch.nn.Module)
 
 

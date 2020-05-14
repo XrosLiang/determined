@@ -44,6 +44,9 @@ def load_trial_implementation(entrypoint_spec: str) -> Type[det.Trial]:
     logging.info(f"Loading Trial implementation with entrypoint {entrypoint_spec}.")
     module, qualname_separator, qualname = entrypoint_spec.partition(":")
     obj = importlib.import_module(module)
+    print(obj)
+    print("dir:")
+    print(*dir(obj), sep="\n")
     if qualname_separator:
         for attr in qualname.split("."):
             obj = getattr(obj, attr)
